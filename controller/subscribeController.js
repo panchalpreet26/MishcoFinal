@@ -8,26 +8,13 @@ export const subscribeUser = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-        return res.status(400).json({
-            success: false,
-            message: 'Email is required.',
-        });
+        return res.status(400).json({ success: false, message: 'Email is required.' });
     }
 
     try {
-        // Check if user already subscribed
-        const alreadyExists = await Subscriber.findOne({ email });
-        if (alreadyExists) {
-            return res.status(200).json({
-                success: false,
-                message: 'You are already subscribed.',
-            });
-        }
-
-        // Save new subscriber
         const subscriber = await Subscriber.create({ email });
 
-        // Send Welcome email
+        // Send a welcome email confirmation
         await sendEmail({
             to: email,
             subject: 'Welcome to Mishco Lifescience Updates!',
@@ -39,25 +26,19 @@ export const subscribeUser = async (req, res) => {
             `,
         });
 
-        return res.status(201).json({
-            success: true,
-            message: 'Successfully subscribed! Check your email for confirmation.',
+        res.status(201).json({ 
+            success: true, 
+            message: 'Successfully subscribed! Check your email for confirmation.'
         });
     } catch (error) {
-
-        // Handle Mongo duplicate key error if unique index is enabled
-        if (error.code === 11000) {
-            return res.status(200).json({
-                success: false,
-                message: 'You are already subscribed.',
-            });
-        }
-
+        // Handle MongoDB duplicate key error (code 11000)
+        // if (error.code === 11000) {
+        //     return res.status(409).json({
+        //         success: false,
+        //         message: 'This email is already subscribed.',
+        //     });
+        // }
         console.error("Subscription error:", error);
-
-        return res.status(500).json({
-            success: false,
-            message: 'Failed to subscribe.',
-        });
+        res.status(500).json({ success: false, message: 'Failed to subscribe.' });
     }
 };
